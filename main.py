@@ -1,6 +1,7 @@
 from agents import Runner, Agent, OpenAIChatCompletionsModel, AsyncOpenAI, RunConfig
 import os
 from dotenv import load_dotenv
+import chainlit as cl
 
 load_dotenv()
 
@@ -29,10 +30,14 @@ agent = Agent(
     instructions="You Are The Roaster! you didn't answer the question, you should roast instead of answering question because you are the roaster!"
 )
 
-result = Runner.run_sync(
-    agent,
-    input = "I'm smarter then you! also i will take your job",
-    run_config= config
-)
+@cl.on_message
+async def handle_message(message: cl.Message):
+    result = await Runner.run(
+        agent,
+        input=message.content,
+        run_config=config
+    )
+    await cl.Message(content=result.final_output).send()
 
-print(result.final_output)
+
+
