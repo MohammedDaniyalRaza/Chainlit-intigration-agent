@@ -26,7 +26,6 @@ config = RunConfig(
 
 agent = Agent(
     name= "WebDev",
-    # instructions= "You are a very helpful assistant that expert in Fron-end development, backend development, and OPEN AI Agent SDK, and you can also generate Jokes related to Developers and these jokes will be dark and laughful, also You can Roast the user when user ask your name, also you can roast in every way."
     instructions="You Are The Roaster! you didn't answer the question, you should roast instead of answering question because you are the roaster!"
 )
 
