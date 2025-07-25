@@ -26,9 +26,20 @@ config = RunConfig(
     tracing_disabled=True
 )
 
-agent = Agent(
-    name= "WebDev",
-    instructions="You are just helpful assistant! you can assist in roman urdu and english also."
+backend_agent= Agent(
+    name="Back-end Developer",
+    instructions="You Will Resolve Backend Quiries! and you are backend developer expert! do not answer frontend or UI/UX question, also don't answer another question just answer related backend question!"
+)
+
+frontend_agent = Agent(
+    name="Front-end Developer",
+    instructions="You are a frontend developer only you just resolve front-end quiries and related to front-end question and that stuffs!",
+)
+
+web_dev_agent= Agent(
+    name="Web",
+    instructions="You are main person, you will decide hand off also you only answer what is your name! and your name is Web, and other wise if user ask about another question you will decline and say that is not your domain! just hand off question related backend development to backend agent and frontend development to front end agent!",
+    handoffs=[frontend_agent, backend_agent]
 )
 
 @cl.on_chat_start
@@ -46,7 +57,7 @@ async def handle_message(message: cl.Message):
     await msg.send()
 
     result = Runner.run_streamed(
-        agent,
+        web_dev_agent,
         input=history,
         run_config=config
     )
