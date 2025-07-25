@@ -3,6 +3,7 @@ from openai.types.responses import ResponseTextDeltaEvent
 import os
 from dotenv import load_dotenv
 import chainlit as cl
+import requests
 
 load_dotenv()
 
@@ -26,21 +27,80 @@ config = RunConfig(
     tracing_disabled=True
 )
 
-backend_agent= Agent(
-    name="Back-end Developer",
-    instructions="You Will Resolve Backend Quiries! and you are backend developer expert! do not answer frontend or UI/UX question, also don't answer another question just answer related backend question!"
+# 🟢 Fetch Daniyal's profile
+def fetch_daniyal_profile():
+    try:
+        response = requests.get("https://mohammeddaniyalraza.vercel.app/api/profile")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": "Profile data not found."}
+    except Exception as e:
+        return {"error": str(e)}
+
+profile_data = fetch_daniyal_profile()
+
+profile_agent = Agent(
+    name="Daniyal's Profile",
+    instructions=f"""
+You are a personal assistant chatbot for Mohammed Daniyal Raza.
+
+The following is Daniyal's profile data fetched via API:
+{profile_data}
+
+✅ Your job is to answer any questions related to Daniyal's:
+- Skills
+- Experience
+- Education
+- Contact Info
+- Portfolio links
+- Projects
+- Services he offers
+- Everything!!!
+
+🚫 If someone asks about anything else (not related to Daniyal), politely decline and say:
+"I'm only here to answer questions about Mohammed Daniyal Raza."
+"""
 )
+
+
+backend_agent = Agent(
+    name="Back-end Developer",
+    instructions="""
+You are an expert backend developer. 
+✅ Only answer questions strictly related to backend development (e.g., APIs, databases, server logic, authentication, backend frameworks, etc.).
+🚫 Do NOT answer frontend (UI/UX) or any unrelated topics.
+If asked something outside your domain, politely respond that it's not your area of expertise.
+"""
+)
+
 
 frontend_agent = Agent(
     name="Front-end Developer",
-    instructions="You are a frontend developer only you just resolve front-end quiries and related to front-end question and that stuffs!",
+    instructions="""
+You are a professional frontend developer. 
+✅ You only respond to questions related to frontend technologies (e.g., HTML, CSS, JavaScript, React, animations, UI, UX).
+🚫 Do NOT answer anything related to backend, APIs, databases, or unrelated topics.
+If asked something outside your scope, clearly say it's not your area.
+"""
 )
 
-web_dev_agent= Agent(
+
+web_dev_agent = Agent(
     name="Web",
-    instructions="You are main person, you will decide hand off also you only answer what is your name! and your name is Web, and other wise if user ask about another question you will decline and say that is not your domain! just hand off question related backend development to backend agent and frontend development to front end agent!",
-    handoffs=[frontend_agent, backend_agent]
+    instructions=f"""
+You are the main web coordinator named "Web".
+
+🎯 Your job is to manage incoming questions:
+- If a question is related to **frontend** (HTML, CSS, JavaScript, React, UI/UX), hand it off to the **Front-end Developer agent**.
+- If a question is related to **backend** (APIs, databases, server-side logic, authentication), hand it off to the **Back-end Developer agent**.
+if a question about daniyal you can hand off to profile agent!
+
+🛑 If the question is about anything else (e.g., AI, SEO, freelancing, design, or general chit-chat), you can respond directly in a helpful and friendly way.
+""",
+    handoffs=[frontend_agent, backend_agent, profile_agent]
 )
+
 
 @cl.on_chat_start
 async def handle_start():
